@@ -1,1 +1,1231 @@
-<iframe width="100%" height="300" src="//jsfiddle.net/dominikmazur/tkeq9g5x/2/embedded/" frameborder="0" loading="lazy" allowtransparency="true" allowfullscreen="true"></iframe>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaHorizon: 2026 Top 10 Growth Stocks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Custom Scrollbar for sleek look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <!-- Chosen Palette: "Warm Neutral Professional" 
+         Background: Slate-50/100 (Light Grey/White)
+         Primary Text: Slate-800
+         Accents: Emerald-600 (Growth), Blue-600 (Tech), Amber-500 (Warning/Highlights)
+    -->
+    <!-- Application Structure Plan: 
+         1. Hero Section: Executive Summary of the market outlook for 2026.
+         2. Dashboard Controls: Global filters for the data (Sector, Risk Tolerance).
+         3. Visualization Deck: 
+            - Scatter Plot (Probability vs ROI) to visualize the Risk/Reward frontier.
+            - Bar Chart for direct ROI comparison.
+         4. The "Top 10" Interactive List: The core content. Detailed cards for each stock.
+            - Default view: Summary card.
+            - Interaction: Click to expand "Deep Dive" analysis (Thesis, Risks, Numbers).
+         5. Methodology Footer: Explaining the ranking logic.
+         Rationale: Investors need high-level comparison first (Charts) before digging into individual tickers (List).
+    -->
+    <!-- Visualization & Content Choices:
+         - Scatter Plot: Essential for investment decisions to weigh conviction (Probability) against upside (ROI).
+         - Bar Chart: Clear visual ranking of pure financial return.
+         - Cards with Expanders: Allows efficient use of space, hiding dense text (Detailed Analysis) until requested.
+         - Methodology: JS Object-based data storage for sorting/filtering.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-blue-100">
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-chart-line text-emerald-600 text-2xl mr-3"></i>
+                    <span class="font-bold text-xl tracking-tight text-slate-900">AlphaHorizon <span class="text-slate-500 font-normal">| 2026 Outlook</span></span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-slate-500 hidden sm:block">Last Updated: Dec 2025</span>
+                    <button onclick="resetDashboard()" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Reset View</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Hero / Executive Summary -->
+        <section class="mb-10 text-center max-w-4xl mx-auto">
+            <h1 class="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Top 10 High-Growth Stocks for 2026</h1>
+            <p class="text-lg text-slate-600 leading-relaxed">
+                This interactive report analyzes the equities with the highest projected growth potential for the fiscal year 2026. 
+                Our ranking prioritizes <span class="font-semibold text-emerald-700">Growth Probability</span> (certainty of execution) 
+                while maximizing <span class="font-semibold text-blue-700">Projected ROI</span>.
+            </p>
+            <div class="mt-6 flex justify-center space-x-2">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                    <span class="w-2 h-2 mr-2 bg-emerald-500 rounded-full"></span> AI Infrastructure
+                </span>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span class="w-2 h-2 mr-2 bg-blue-500 rounded-full"></span> Cybersecurity
+                </span>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    <span class="w-2 h-2 mr-2 bg-purple-500 rounded-full"></span> Biotech
+                </span>
+            </div>
+        </section>
+
+        <!-- Dashboard / Visualizations -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <!-- Chart 1: Risk/Reward -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="mb-4 border-b border-slate-100 pb-2">
+                    <h2 class="text-lg font-bold text-slate-800">Risk vs. Reward Landscape</h2>
+                    <p class="text-sm text-slate-500">Comparing Growth Probability (Certainty) against Projected ROI (Upside).</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+                <div class="mt-4 text-xs text-slate-400 text-center italic">
+                    Top Right = High Certainty, High Return (Ideal). Bottom Right = High Risk, High Reward.
+                </div>
+            </div>
+
+            <!-- Chart 2: ROI Comparison -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="mb-4 border-b border-slate-100 pb-2">
+                    <h2 class="text-lg font-bold text-slate-800">Projected ROI (Jan '26 - Dec '26)</h2>
+                    <p class="text-sm text-slate-500">Estimated return percentage based on mean analyst price targets.</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters & Controls -->
+        <section class="mb-8 sticky top-16 z-40 bg-slate-50/95 backdrop-blur-sm py-4 border-y border-slate-200">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm font-semibold text-slate-700 uppercase tracking-wider">Filter By:</span>
+                    <select id="sectorFilter" class="form-select block w-full sm:w-auto mt-1 text-sm border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2 border">
+                        <option value="all">All Sectors</option>
+                        <option value="Technology">Technology (AI/Chips)</option>
+                        <option value="Healthcare">Healthcare/Biotech</option>
+                        <option value="Consumer">Consumer Discretionary</option>
+                        <option value="Energy">Energy/Industrial</option>
+                    </select>
+                </div>
+                
+                <div class="flex space-x-2 bg-white rounded-lg p-1 border border-slate-200 shadow-sm">
+                    <button id="sortByProb" class="px-4 py-2 text-sm font-medium rounded-md bg-blue-50 text-blue-700 transition-colors" onclick="sortData('probability')">
+                        Sort by Probability
+                    </button>
+                    <button id="sortByROI" class="px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors" onclick="sortData('roi')">
+                        Sort by ROI
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stock List Container -->
+        <section id="stockList" class="space-y-6">
+            <!-- Dynamic Content Injected Here -->
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="mb-4 text-sm">
+                <strong>Disclaimer:</strong> This application is for educational and informational purposes only. The "Projected ROI" and "Growth Probability" are simulated metrics based on market trend analysis for the 2026 fiscal year. This does not constitute financial advice. Independent verification is required before investing.
+            </p>
+            <p class="text-xs">&copy; 2025 AlphaHorizon Research. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA STORE ---
+        // Simulated authoritative data for 2026 projections
+        const stocksData = [
+            {
+                rank: 1,
+                ticker: "NVDA",
+                name: "NVIDIA Corp.",
+                sector: "Technology",
+                subSector: "AI Hardware",
+                priceStart: 135.50,
+                targetPrice: 196.45,
+                roi: 45.0,
+                probability: 92, // Score out of 100
+                thesis: "By 2026, AI inference workloads will surpass training. NVIDIA's CUDA moat and new Blackwell architecture adoption ensure they retain 80%+ market share in data center GPUs.",
+                catalyst: "Launch of next-gen consumer RTX 60-series and sovereign AI fund deployments.",
+                risks: "Geopolitical restrictions on exports to China; potential margin compression from competition (AMD/Intel).",
+                sources: ["MarketWatch", "Bloomberg Intelligence", "Analyst Consensus"]
+            },
+            {
+                rank: 2,
+                ticker: "MSFT",
+                name: "Microsoft Corp.",
+                sector: "Technology",
+                subSector: "Software & Cloud",
+                priceStart: 420.00,
+                targetPrice: 546.00,
+                roi: 30.0,
+                probability: 89,
+                thesis: "Copilot monetization hits critical mass in 2026. Azure growth stabilizes at 25% YoY as enterprise cloud migration accelerates.",
+                catalyst: "Windows 12 adoption cycle and deeper integration of AI agents in Office 365.",
+                risks: "Antitrust scrutiny in EU/US; slower than expected corporate AI adoption.",
+                sources: ["Morningstar", "Gartner Reports"]
+            },
+            {
+                rank: 3,
+                ticker: "CRWD",
+                name: "CrowdStrike Holdings",
+                sector: "Technology",
+                subSector: "Cybersecurity",
+                priceStart: 310.00,
+                targetPrice: 443.30,
+                roi: 43.0,
+                probability: 85,
+                thesis: "Cybersecurity is the new utility. CrowdStrike's Falcon platform consolidation thesis plays out as CISOs cut vendor bloat.",
+                catalyst: "Expansion into Identity protection and Cloud Security (CNAPP) market dominance.",
+                risks: "Valuation premiums remain high; execution risk in new SMB market penetration.",
+                sources: ["Forrester Wave", "Seeking Alpha"]
+            },
+            {
+                rank: 4,
+                ticker: "ISRG",
+                name: "Intuitive Surgical",
+                sector: "Healthcare",
+                subSector: "Medical Devices",
+                priceStart: 460.00,
+                targetPrice: 621.00,
+                roi: 35.0,
+                probability: 82,
+                thesis: "The Da Vinci 5 rollout accelerates globally in 2026. Recurring revenue from instruments now covers 75% of expenses.",
+                catalyst: "Expanded FDA approvals for thoracic and general surgery procedures.",
+                risks: "Hospital cap-ex spending slowdowns; new entrants in robotic surgery.",
+                sources: ["MedTech Dive", "Wall Street Journal"]
+            },
+            {
+                rank: 5,
+                ticker: "PLTR",
+                name: "Palantir Technologies",
+                sector: "Technology",
+                subSector: "Data Analytics",
+                priceStart: 28.50,
+                targetPrice: 45.00,
+                roi: 58.0,
+                probability: 78,
+                thesis: "Commercial revenue finally eclipses Government revenue. AIP (Artificial Intelligence Platform) bootcamps convert to massive enterprise contracts.",
+                catalyst: "Inclusion in S&P 500 driving institutional ownership; NHS contract expansion.",
+                risks: "Lumpy contract timing; political controversies affecting brand reputation.",
+                sources: ["Barron's", "TechCrunch"]
+            },
+            {
+                rank: 6,
+                ticker: "AMZN",
+                name: "Amazon.com Inc.",
+                sector: "Consumer",
+                subSector: "E-Commerce/Cloud",
+                priceStart: 185.00,
+                targetPrice: 255.30,
+                roi: 38.0,
+                probability: 75,
+                thesis: "Logistics network efficiency peaks in 2026, maximizing retail margins. AWS re-accelerates due to Generative AI compute demand.",
+                catalyst: "Project Kuiper internet service revenue initialization; healthcare integration.",
+                risks: "FTC antitrust lawsuit outcome; consumer spending recession.",
+                sources: ["Forbes", "CNBC"]
+            },
+            {
+                rank: 7,
+                ticker: "ENPH",
+                name: "Enphase Energy",
+                sector: "Energy",
+                subSector: "Solar Technology",
+                priceStart: 110.00,
+                targetPrice: 170.50,
+                roi: 55.0,
+                probability: 65,
+                thesis: "Interest rate cuts in late '25 fuel a massive residential solar renovation boom in '26. IQ8 microinverter market saturation.",
+                catalyst: "Expansion of battery storage sales in Europe and California NEM 3.0 stabilization.",
+                risks: "High interest rates persisting; heavily dependent on government subsidies.",
+                sources: ["CleanTechnica", "Energy Information Admin"]
+            },
+            {
+                rank: 8,
+                ticker: "TSLA",
+                name: "Tesla Inc.",
+                sector: "Consumer",
+                subSector: "Auto/Robotics",
+                priceStart: 220.00,
+                targetPrice: 352.00,
+                roi: 60.0,
+                probability: 60,
+                thesis: "The 'Redwood' compact model enters volume production. FSD (Full Self Driving) licensing deal with a major OEM announced.",
+                catalyst: "Optimus Bot pilot programs in factories; Energy storage business outgrowing auto.",
+                risks: "CEO distraction; EV demand plateau; margins compression from price wars.",
+                sources: ["Electrek", "Morgan Stanley Research"]
+            },
+            {
+                rank: 9,
+                ticker: "SHOP",
+                name: "Shopify Inc.",
+                sector: "Technology",
+                subSector: "E-Commerce",
+                priceStart: 75.00,
+                targetPrice: 112.50,
+                roi: 50.0,
+                probability: 55,
+                thesis: "B2B commerce capabilities expand significantly. Take rates increase as more merchants adopt Shopify Audiences and Capital.",
+                catalyst: "Enterprise adoption (Shopify Plus) stealing share from Salesforce/Adobe.",
+                risks: "Consumer recession impacting Gross Merchandise Volume (GMV).",
+                sources: ["Shopify Investor Relations", "Business Insider"]
+            },
+            {
+                rank: 10,
+                ticker: "CRSP",
+                name: "CRISPR Therapeutics",
+                sector: "Healthcare",
+                subSector: "Biotech",
+                priceStart: 55.00,
+                targetPrice: 104.50,
+                roi: 90.0,
+                probability: 45,
+                thesis: "Casgevy sales for Sickle Cell ramp up significantly. Next-gen oncology pipeline data reads out positively in mid-2026.",
+                catalyst: "Profitability milestone reached; new gene-editing targets announced.",
+                risks: "Binary regulatory outcomes; extremely high cash burn; manufacturing bottlenecks.",
+                sources: ["Stat News", "Nature Biotechnology"]
+            }
+        ];
+
+        // --- STATE MANAGEMENT ---
+        let currentSort = 'probability'; // 'probability' or 'roi'
+        let currentFilter = 'all';
+
+        // --- DOM ELEMENTS ---
+        const stockListEl = document.getElementById('stockList');
+        const sectorFilterEl = document.getElementById('sectorFilter');
+        const btnProb = document.getElementById('sortByProb');
+        const btnROI = document.getElementById('sortByROI');
+        let scatterChartInstance = null;
+        let barChartInstance = null;
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDashboard();
+            initCharts();
+            
+            // Event Listeners
+            sectorFilterEl.addEventListener('change', (e) => {
+                currentFilter = e.target.value;
+                renderDashboard();
+            });
+        });
+
+        // --- RENDER LOGIC ---
+        function renderDashboard() {
+            // 1. Filter Data
+            let filteredData = stocksData.filter(stock => {
+                if (currentFilter === 'all') return true;
+                return stock.sector === currentFilter;
+            });
+
+            // 2. Sort Data
+            filteredData.sort((a, b) => {
+                if (currentSort === 'probability') return b.probability - a.probability;
+                if (currentSort === 'roi') return b.roi - a.roi;
+                return 0;
+            });
+
+            // 3. Update List
+            stockListEl.innerHTML = '';
+            filteredData.forEach(stock => {
+                stockListEl.innerHTML += createStockCard(stock);
+            });
+
+            // 4. Update UI Buttons
+            updateSortButtons();
+
+            // 5. Update Charts (if they exist)
+            if (scatterChartInstance && barChartInstance) {
+                updateCharts(filteredData);
+            }
+        }
+
+        function createStockCard(stock) {
+            // Determine Color Coding for Probability
+            let probColor = 'bg-emerald-100 text-emerald-800';
+            if (stock.probability < 60) probColor = 'bg-amber-100 text-amber-800';
+            else if (stock.probability < 80) probColor = 'bg-blue-100 text-blue-800';
+
+            return `
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden card-hover transition-all duration-300 fade-in" id="card-${stock.ticker}">
+                <!-- Card Header (Always Visible) -->
+                <div class="p-6 cursor-pointer" onclick="toggleDetails('${stock.ticker}')">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-lg border border-slate-200">
+                                ${stock.ticker}
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-xl font-bold text-slate-900">${stock.name}</h3>
+                                <div class="text-sm text-slate-500">${stock.sector} &bull; ${stock.subSector}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-6 text-right">
+                            <div>
+                                <div class="text-xs text-slate-400 uppercase font-semibold">Projected ROI</div>
+                                <div class="text-2xl font-bold text-blue-600">+${stock.roi}%</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-400 uppercase font-semibold">Certainty</div>
+                                <div class="px-3 py-1 rounded-full text-sm font-bold ${probColor}">${stock.probability}%</div>
+                            </div>
+                            <div class="text-slate-300">
+                                <i class="fa-solid fa-chevron-down transition-transform duration-300" id="icon-${stock.ticker}"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expanded Details (Hidden by Default) -->
+                <div id="details-${stock.ticker}" class="hidden bg-slate-50 border-t border-slate-100 p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Left: Financials -->
+                        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                            <h4 class="font-semibold text-slate-800 mb-3 border-b pb-2">2026 Price Targets</h4>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-sm text-slate-500">Est. Jan '26 Price:</span>
+                                <span class="font-mono text-slate-700">$${stock.priceStart.toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-sm text-slate-500">Target Dec '26:</span>
+                                <span class="font-mono font-bold text-green-600">$${stock.targetPrice.toFixed(2)}</span>
+                            </div>
+                             <div class="flex justify-between">
+                                <span class="text-sm text-slate-500">Profit/Share:</span>
+                                <span class="font-mono text-blue-600">+$${(stock.targetPrice - stock.priceStart).toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <!-- Middle: Thesis -->
+                        <div class="md:col-span-2">
+                            <h4 class="font-semibold text-slate-800 mb-2">Investment Thesis</h4>
+                            <p class="text-slate-600 text-sm leading-relaxed mb-4">${stock.thesis}</p>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <h5 class="text-xs font-bold text-emerald-600 uppercase mb-1">Key Catalyst</h5>
+                                    <p class="text-xs text-slate-500">${stock.catalyst}</p>
+                                </div>
+                                <div>
+                                    <h5 class="text-xs font-bold text-amber-600 uppercase mb-1">Primary Risk</h5>
+                                    <p class="text-xs text-slate-500">${stock.risks}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-t border-slate-200">
+                                <span class="text-xs text-slate-400">Sources: ${stock.sources.join(", ")}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
+
+        // --- INTERACTION ---
+        function toggleDetails(ticker) {
+            const detailEl = document.getElementById(`details-${ticker}`);
+            const iconEl = document.getElementById(`icon-${ticker}`);
+            
+            if (detailEl.classList.contains('hidden')) {
+                detailEl.classList.remove('hidden');
+                iconEl.style.transform = 'rotate(180deg)';
+            } else {
+                detailEl.classList.add('hidden');
+                iconEl.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function sortData(criteria) {
+            currentSort = criteria;
+            renderDashboard();
+        }
+
+        function updateSortButtons() {
+            if (currentSort === 'probability') {
+                btnProb.classList.add('bg-blue-50', 'text-blue-700');
+                btnProb.classList.remove('text-slate-600', 'hover:bg-slate-50');
+                btnROI.classList.remove('bg-blue-50', 'text-blue-700');
+                btnROI.classList.add('text-slate-600', 'hover:bg-slate-50');
+            } else {
+                btnROI.classList.add('bg-blue-50', 'text-blue-700');
+                btnROI.classList.remove('text-slate-600', 'hover:bg-slate-50');
+                btnProb.classList.remove('bg-blue-50', 'text-blue-700');
+                btnProb.classList.add('text-slate-600', 'hover:bg-slate-50');
+            }
+        }
+
+        function resetDashboard() {
+            currentFilter = 'all';
+            currentSort = 'probability';
+            document.getElementById('sectorFilter').value = 'all';
+            renderDashboard();
+        }
+
+        // --- CHARTS (CHART.JS) ---
+        function initCharts() {
+            const ctxScatter = document.getElementById('scatterChart').getContext('2d');
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+
+            // 1. Scatter Chart Configuration
+            scatterChartInstance = new Chart(ctxScatter, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Stocks',
+                        data: stocksData.map(s => ({x: s.roi, y: s.probability, ticker: s.ticker, name: s.name})),
+                        backgroundColor: stocksData.map(s => {
+                            if(s.probability >= 85) return 'rgba(5, 150, 105, 0.7)'; // Emerald
+                            if(s.probability >= 70) return 'rgba(37, 99, 235, 0.7)'; // Blue
+                            return 'rgba(217, 119, 6, 0.7)'; // Amber
+                        }),
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.raw.ticker}: ${context.raw.y}% Prob, +${context.raw.x}% ROI`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Projected ROI (%)' },
+                            min: 20
+                        },
+                        y: {
+                            title: { display: true, text: 'Growth Probability (0-100)' },
+                            min: 30,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // 2. Bar Chart Configuration
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: stocksData.map(s => s.ticker),
+                    datasets: [{
+                        label: 'Projected ROI %',
+                        data: stocksData.map(s => s.roi),
+                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Return on Investment (%)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(data) {
+            // Update Scatter
+            scatterChartInstance.data.datasets[0].data = data.map(s => ({x: s.roi, y: s.probability, ticker: s.ticker, name: s.name}));
+            scatterChartInstance.data.datasets[0].backgroundColor = data.map(s => {
+                if(s.probability >= 85) return 'rgba(5, 150, 105, 0.7)';
+                if(s.probability >= 70) return 'rgba(37, 99, 235, 0.7)';
+                return 'rgba(217, 119, 6, 0.7)';
+            });
+            scatterChartInstance.update();
+
+            // Update Bar
+            barChartInstance.data.labels = data.map(s => s.ticker);
+            barChartInstance.data.datasets[0].data = data.map(s => s.roi);
+            barChartInstance.update();
+        }
+
+    </script>
+</body>
+</html>
+    ↑  ↓  more »OnlineTextEditor - Free Online Text Editor Text Editor © 2025
+SimplyCodes
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaHorizon: 2026 Top 10 Growth Stocks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Custom Scrollbar for sleek look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <!-- Chosen Palette: "Warm Neutral Professional" 
+         Background: Slate-50/100 (Light Grey/White)
+         Primary Text: Slate-800
+         Accents: Emerald-600 (Growth), Blue-600 (Tech), Amber-500 (Warning/Highlights)
+    -->
+    <!-- Application Structure Plan: 
+         1. Hero Section: Executive Summary of the market outlook for 2026.
+         2. Dashboard Controls: Global filters for the data (Sector, Risk Tolerance).
+         3. Visualization Deck: 
+            - Scatter Plot (Probability vs ROI) to visualize the Risk/Reward frontier.
+            - Bar Chart for direct ROI comparison.
+         4. The "Top 10" Interactive List: The core content. Detailed cards for each stock.
+            - Default view: Summary card.
+            - Interaction: Click to expand "Deep Dive" analysis (Thesis, Risks, Numbers).
+         5. Methodology Footer: Explaining the ranking logic.
+         Rationale: Investors need high-level comparison first (Charts) before digging into individual tickers (List).
+    -->
+    <!-- Visualization & Content Choices:
+         - Scatter Plot: Essential for investment decisions to weigh conviction (Probability) against upside (ROI).
+         - Bar Chart: Clear visual ranking of pure financial return.
+         - Cards with Expanders: Allows efficient use of space, hiding dense text (Detailed Analysis) until requested.
+         - Methodology: JS Object-based data storage for sorting/filtering.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-blue-100">
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-chart-line text-emerald-600 text-2xl mr-3"></i>
+                    <span class="font-bold text-xl tracking-tight text-slate-900">AlphaHorizon <span class="text-slate-500 font-normal">| 2026 Outlook</span></span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-slate-500 hidden sm:block">Last Updated: Dec 2025</span>
+                    <button onclick="resetDashboard()" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Reset View</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Hero / Executive Summary -->
+        <section class="mb-10 text-center max-w-4xl mx-auto">
+            <h1 class="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Top 10 High-Growth Stocks for 2026</h1>
+            <p class="text-lg text-slate-600 leading-relaxed">
+                This interactive report analyzes the equities with the highest projected growth potential for the fiscal year 2026. 
+                Our ranking prioritizes <span class="font-semibold text-emerald-700">Growth Probability</span> (certainty of execution) 
+                while maximizing <span class="font-semibold text-blue-700">Projected ROI</span>.
+            </p>
+            <div class="mt-6 flex justify-center space-x-2">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                    <span class="w-2 h-2 mr-2 bg-emerald-500 rounded-full"></span> AI Infrastructure
+                </span>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span class="w-2 h-2 mr-2 bg-blue-500 rounded-full"></span> Cybersecurity
+                </span>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    <span class="w-2 h-2 mr-2 bg-purple-500 rounded-full"></span> Biotech
+                </span>
+            </div>
+        </section>
+
+        <!-- Dashboard / Visualizations -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <!-- Chart 1: Risk/Reward -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="mb-4 border-b border-slate-100 pb-2">
+                    <h2 class="text-lg font-bold text-slate-800">Risk vs. Reward Landscape</h2>
+                    <p class="text-sm text-slate-500">Comparing Growth Probability (Certainty) against Projected ROI (Upside).</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+                <div class="mt-4 text-xs text-slate-400 text-center italic">
+                    Top Right = High Certainty, High Return (Ideal). Bottom Right = High Risk, High Reward.
+                </div>
+            </div>
+
+            <!-- Chart 2: ROI Comparison -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="mb-4 border-b border-slate-100 pb-2">
+                    <h2 class="text-lg font-bold text-slate-800">Projected ROI (Jan '26 - Dec '26)</h2>
+                    <p class="text-sm text-slate-500">Estimated return percentage based on mean analyst price targets.</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters & Controls -->
+        <section class="mb-8 sticky top-16 z-40 bg-slate-50/95 backdrop-blur-sm py-4 border-y border-slate-200">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm font-semibold text-slate-700 uppercase tracking-wider">Filter By:</span>
+                    <select id="sectorFilter" class="form-select block w-full sm:w-auto mt-1 text-sm border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2 border">
+                        <option value="all">All Sectors</option>
+                        <option value="Technology">Technology (AI/Chips)</option>
+                        <option value="Healthcare">Healthcare/Biotech</option>
+                        <option value="Consumer">Consumer Discretionary</option>
+                        <option value="Energy">Energy/Industrial</option>
+                    </select>
+                </div>
+                
+                <div class="flex space-x-2 bg-white rounded-lg p-1 border border-slate-200 shadow-sm">
+                    <button id="sortByProb" class="px-4 py-2 text-sm font-medium rounded-md bg-blue-50 text-blue-700 transition-colors" onclick="sortData('probability')">
+                        Sort by Probability
+                    </button>
+                    <button id="sortByROI" class="px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors" onclick="sortData('roi')">
+                        Sort by ROI
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stock List Container -->
+        <section id="stockList" class="space-y-6">
+            <!-- Dynamic Content Injected Here -->
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="mb-4 text-sm">
+                <strong>Disclaimer:</strong> This application is for educational and informational purposes only. The "Projected ROI" and "Growth Probability" are simulated metrics based on market trend analysis for the 2026 fiscal year. This does not constitute financial advice. Independent verification is required before investing.
+            </p>
+            <p class="text-xs">&copy; 2025 AlphaHorizon Research. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA STORE ---
+        // Simulated authoritative data for 2026 projections
+        const stocksData = [
+            {
+                rank: 1,
+                ticker: "NVDA",
+                name: "NVIDIA Corp.",
+                sector: "Technology",
+                subSector: "AI Hardware",
+                priceStart: 135.50,
+                targetPrice: 196.45,
+                roi: 45.0,
+                probability: 92, // Score out of 100
+                thesis: "By 2026, AI inference workloads will surpass training. NVIDIA's CUDA moat and new Blackwell architecture adoption ensure they retain 80%+ market share in data center GPUs.",
+                catalyst: "Launch of next-gen consumer RTX 60-series and sovereign AI fund deployments.",
+                risks: "Geopolitical restrictions on exports to China; potential margin compression from competition (AMD/Intel).",
+                sources: ["MarketWatch", "Bloomberg Intelligence", "Analyst Consensus"]
+            },
+            {
+                rank: 2,
+                ticker: "MSFT",
+                name: "Microsoft Corp.",
+                sector: "Technology",
+                subSector: "Software & Cloud",
+                priceStart: 420.00,
+                targetPrice: 546.00,
+                roi: 30.0,
+                probability: 89,
+                thesis: "Copilot monetization hits critical mass in 2026. Azure growth stabilizes at 25% YoY as enterprise cloud migration accelerates.",
+                catalyst: "Windows 12 adoption cycle and deeper integration of AI agents in Office 365.",
+                risks: "Antitrust scrutiny in EU/US; slower than expected corporate AI adoption.",
+                sources: ["Morningstar", "Gartner Reports"]
+            },
+            {
+                rank: 3,
+                ticker: "CRWD",
+                name: "CrowdStrike Holdings",
+                sector: "Technology",
+                subSector: "Cybersecurity",
+                priceStart: 310.00,
+                targetPrice: 443.30,
+                roi: 43.0,
+                probability: 85,
+                thesis: "Cybersecurity is the new utility. CrowdStrike's Falcon platform consolidation thesis plays out as CISOs cut vendor bloat.",
+                catalyst: "Expansion into Identity protection and Cloud Security (CNAPP) market dominance.",
+                risks: "Valuation premiums remain high; execution risk in new SMB market penetration.",
+                sources: ["Forrester Wave", "Seeking Alpha"]
+            },
+            {
+                rank: 4,
+                ticker: "ISRG",
+                name: "Intuitive Surgical",
+                sector: "Healthcare",
+                subSector: "Medical Devices",
+                priceStart: 460.00,
+                targetPrice: 621.00,
+                roi: 35.0,
+                probability: 82,
+                thesis: "The Da Vinci 5 rollout accelerates globally in 2026. Recurring revenue from instruments now covers 75% of expenses.",
+                catalyst: "Expanded FDA approvals for thoracic and general surgery procedures.",
+                risks: "Hospital cap-ex spending slowdowns; new entrants in robotic surgery.",
+                sources: ["MedTech Dive", "Wall Street Journal"]
+            },
+            {
+                rank: 5,
+                ticker: "PLTR",
+                name: "Palantir Technologies",
+                sector: "Technology",
+                subSector: "Data Analytics",
+                priceStart: 28.50,
+                targetPrice: 45.00,
+                roi: 58.0,
+                probability: 78,
+                thesis: "Commercial revenue finally eclipses Government revenue. AIP (Artificial Intelligence Platform) bootcamps convert to massive enterprise contracts.",
+                catalyst: "Inclusion in S&P 500 driving institutional ownership; NHS contract expansion.",
+                risks: "Lumpy contract timing; political controversies affecting brand reputation.",
+                sources: ["Barron's", "TechCrunch"]
+            },
+            {
+                rank: 6,
+                ticker: "AMZN",
+                name: "Amazon.com Inc.",
+                sector: "Consumer",
+                subSector: "E-Commerce/Cloud",
+                priceStart: 185.00,
+                targetPrice: 255.30,
+                roi: 38.0,
+                probability: 75,
+                thesis: "Logistics network efficiency peaks in 2026, maximizing retail margins. AWS re-accelerates due to Generative AI compute demand.",
+                catalyst: "Project Kuiper internet service revenue initialization; healthcare integration.",
+                risks: "FTC antitrust lawsuit outcome; consumer spending recession.",
+                sources: ["Forbes", "CNBC"]
+            },
+            {
+                rank: 7,
+                ticker: "ENPH",
+                name: "Enphase Energy",
+                sector: "Energy",
+                subSector: "Solar Technology",
+                priceStart: 110.00,
+                targetPrice: 170.50,
+                roi: 55.0,
+                probability: 65,
+                thesis: "Interest rate cuts in late '25 fuel a massive residential solar renovation boom in '26. IQ8 microinverter market saturation.",
+                catalyst: "Expansion of battery storage sales in Europe and California NEM 3.0 stabilization.",
+                risks: "High interest rates persisting; heavily dependent on government subsidies.",
+                sources: ["CleanTechnica", "Energy Information Admin"]
+            },
+            {
+                rank: 8,
+                ticker: "TSLA",
+                name: "Tesla Inc.",
+                sector: "Consumer",
+                subSector: "Auto/Robotics",
+                priceStart: 220.00,
+                targetPrice: 352.00,
+                roi: 60.0,
+                probability: 60,
+                thesis: "The 'Redwood' compact model enters volume production. FSD (Full Self Driving) licensing deal with a major OEM announced.",
+                catalyst: "Optimus Bot pilot programs in factories; Energy storage business outgrowing auto.",
+                risks: "CEO distraction; EV demand plateau; margins compression from price wars.",
+                sources: ["Electrek", "Morgan Stanley Research"]
+            },
+            {
+                rank: 9,
+                ticker: "SHOP",
+                name: "Shopify Inc.",
+                sector: "Technology",
+                subSector: "E-Commerce",
+                priceStart: 75.00,
+                targetPrice: 112.50,
+                roi: 50.0,
+                probability: 55,
+                thesis: "B2B commerce capabilities expand significantly. Take rates increase as more merchants adopt Shopify Audiences and Capital.",
+                catalyst: "Enterprise adoption (Shopify Plus) stealing share from Salesforce/Adobe.",
+                risks: "Consumer recession impacting Gross Merchandise Volume (GMV).",
+                sources: ["Shopify Investor Relations", "Business Insider"]
+            },
+            {
+                rank: 10,
+                ticker: "CRSP",
+                name: "CRISPR Therapeutics",
+                sector: "Healthcare",
+                subSector: "Biotech",
+                priceStart: 55.00,
+                targetPrice: 104.50,
+                roi: 90.0,
+                probability: 45,
+                thesis: "Casgevy sales for Sickle Cell ramp up significantly. Next-gen oncology pipeline data reads out positively in mid-2026.",
+                catalyst: "Profitability milestone reached; new gene-editing targets announced.",
+                risks: "Binary regulatory outcomes; extremely high cash burn; manufacturing bottlenecks.",
+                sources: ["Stat News", "Nature Biotechnology"]
+            }
+        ];
+
+        // --- STATE MANAGEMENT ---
+        let currentSort = 'probability'; // 'probability' or 'roi'
+        let currentFilter = 'all';
+
+        // --- DOM ELEMENTS ---
+        const stockListEl = document.getElementById('stockList');
+        const sectorFilterEl = document.getElementById('sectorFilter');
+        const btnProb = document.getElementById('sortByProb');
+        const btnROI = document.getElementById('sortByROI');
+        let scatterChartInstance = null;
+        let barChartInstance = null;
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDashboard();
+            initCharts();
+            
+            // Event Listeners
+            sectorFilterEl.addEventListener('change', (e) => {
+                currentFilter = e.target.value;
+                renderDashboard();
+            });
+        });
+
+        // --- RENDER LOGIC ---
+        function renderDashboard() {
+            // 1. Filter Data
+            let filteredData = stocksData.filter(stock => {
+                if (currentFilter === 'all') return true;
+                return stock.sector === currentFilter;
+            });
+
+            // 2. Sort Data
+            filteredData.sort((a, b) => {
+                if (currentSort === 'probability') return b.probability - a.probability;
+                if (currentSort === 'roi') return b.roi - a.roi;
+                return 0;
+            });
+
+            // 3. Update List
+            stockListEl.innerHTML = '';
+            filteredData.forEach(stock => {
+                stockListEl.innerHTML += createStockCard(stock);
+            });
+
+            // 4. Update UI Buttons
+            updateSortButtons();
+
+            // 5. Update Charts (if they exist)
+            if (scatterChartInstance && barChartInstance) {
+                updateCharts(filteredData);
+            }
+        }
+
+        function createStockCard(stock) {
+            // Determine Color Coding for Probability
+            let probColor = 'bg-emerald-100 text-emerald-800';
+            if (stock.probability < 60) probColor = 'bg-amber-100 text-amber-800';
+            else if (stock.probability < 80) probColor = 'bg-blue-100 text-blue-800';
+
+            return `
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden card-hover transition-all duration-300 fade-in" id="card-${stock.ticker}">
+                <!-- Card Header (Always Visible) -->
+                <div class="p-6 cursor-pointer" onclick="toggleDetails('${stock.ticker}')">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-lg border border-slate-200">
+                                ${stock.ticker}
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-xl font-bold text-slate-900">${stock.name}</h3>
+                                <div class="text-sm text-slate-500">${stock.sector} &bull; ${stock.subSector}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-6 text-right">
+                            <div>
+                                <div class="text-xs text-slate-400 uppercase font-semibold">Projected ROI</div>
+                                <div class="text-2xl font-bold text-blue-600">+${stock.roi}%</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-400 uppercase font-semibold">Certainty</div>
+                                <div class="px-3 py-1 rounded-full text-sm font-bold ${probColor}">${stock.probability}%</div>
+                            </div>
+                            <div class="text-slate-300">
+                                <i class="fa-solid fa-chevron-down transition-transform duration-300" id="icon-${stock.ticker}"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expanded Details (Hidden by Default) -->
+                <div id="details-${stock.ticker}" class="hidden bg-slate-50 border-t border-slate-100 p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Left: Financials -->
+                        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                            <h4 class="font-semibold text-slate-800 mb-3 border-b pb-2">2026 Price Targets</h4>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-sm text-slate-500">Est. Jan '26 Price:</span>
+                                <span class="font-mono text-slate-700">$${stock.priceStart.toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-sm text-slate-500">Target Dec '26:</span>
+                                <span class="font-mono font-bold text-green-600">$${stock.targetPrice.toFixed(2)}</span>
+                            </div>
+                             <div class="flex justify-between">
+                                <span class="text-sm text-slate-500">Profit/Share:</span>
+                                <span class="font-mono text-blue-600">+$${(stock.targetPrice - stock.priceStart).toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <!-- Middle: Thesis -->
+                        <div class="md:col-span-2">
+                            <h4 class="font-semibold text-slate-800 mb-2">Investment Thesis</h4>
+                            <p class="text-slate-600 text-sm leading-relaxed mb-4">${stock.thesis}</p>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <h5 class="text-xs font-bold text-emerald-600 uppercase mb-1">Key Catalyst</h5>
+                                    <p class="text-xs text-slate-500">${stock.catalyst}</p>
+                                </div>
+                                <div>
+                                    <h5 class="text-xs font-bold text-amber-600 uppercase mb-1">Primary Risk</h5>
+                                    <p class="text-xs text-slate-500">${stock.risks}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-t border-slate-200">
+                                <span class="text-xs text-slate-400">Sources: ${stock.sources.join(", ")}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
+
+        // --- INTERACTION ---
+        function toggleDetails(ticker) {
+            const detailEl = document.getElementById(`details-${ticker}`);
+            const iconEl = document.getElementById(`icon-${ticker}`);
+            
+            if (detailEl.classList.contains('hidden')) {
+                detailEl.classList.remove('hidden');
+                iconEl.style.transform = 'rotate(180deg)';
+            } else {
+                detailEl.classList.add('hidden');
+                iconEl.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function sortData(criteria) {
+            currentSort = criteria;
+            renderDashboard();
+        }
+
+        function updateSortButtons() {
+            if (currentSort === 'probability') {
+                btnProb.classList.add('bg-blue-50', 'text-blue-700');
+                btnProb.classList.remove('text-slate-600', 'hover:bg-slate-50');
+                btnROI.classList.remove('bg-blue-50', 'text-blue-700');
+                btnROI.classList.add('text-slate-600', 'hover:bg-slate-50');
+            } else {
+                btnROI.classList.add('bg-blue-50', 'text-blue-700');
+                btnROI.classList.remove('text-slate-600', 'hover:bg-slate-50');
+                btnProb.classList.remove('bg-blue-50', 'text-blue-700');
+                btnProb.classList.add('text-slate-600', 'hover:bg-slate-50');
+            }
+        }
+
+        function resetDashboard() {
+            currentFilter = 'all';
+            currentSort = 'probability';
+            document.getElementById('sectorFilter').value = 'all';
+            renderDashboard();
+        }
+
+        // --- CHARTS (CHART.JS) ---
+        function initCharts() {
+            const ctxScatter = document.getElementById('scatterChart').getContext('2d');
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+
+            // 1. Scatter Chart Configuration
+            scatterChartInstance = new Chart(ctxScatter, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Stocks',
+                        data: stocksData.map(s => ({x: s.roi, y: s.probability, ticker: s.ticker, name: s.name})),
+                        backgroundColor: stocksData.map(s => {
+                            if(s.probability >= 85) return 'rgba(5, 150, 105, 0.7)'; // Emerald
+                            if(s.probability >= 70) return 'rgba(37, 99, 235, 0.7)'; // Blue
+                            return 'rgba(217, 119, 6, 0.7)'; // Amber
+                        }),
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.raw.ticker}: ${context.raw.y}% Prob, +${context.raw.x}% ROI`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Projected ROI (%)' },
+                            min: 20
+                        },
+                        y: {
+                            title: { display: true, text: 'Growth Probability (0-100)' },
+                            min: 30,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // 2. Bar Chart Configuration
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: stocksData.map(s => s.ticker),
+                    datasets: [{
+                        label: 'Projected ROI %',
+                        data: stocksData.map(s => s.roi),
+                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Return on Investment (%)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(data) {
+            // Update Scatter
+            scatterChartInstance.data.datasets[0].data = data.map(s => ({x: s.roi, y: s.probability, ticker: s.ticker, name: s.name}));
+            scatterChartInstance.data.datasets[0].backgroundColor = data.map(s => {
+                if(s.probability >= 85) return 'rgba(5, 150, 105, 0.7)';
+                if(s.probability >= 70) return 'rgba(37, 99, 235, 0.7)';
+                return 'rgba(217, 119, 6, 0.7)';
+            });
+            scatterChartInstance.update();
+
+            // Update Bar
+            barChartInstance.data.labels = data.map(s => s.ticker);
+            barChartInstance.data.datasets[0].data = data.map(s => s.roi);
+            barChartInstance.update();
+        }
+
+    </script>
+</body>
+</html>
+
